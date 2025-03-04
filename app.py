@@ -116,7 +116,7 @@ def process_video_stream():
     global face_data
 
     # Open the RTSP stream
-    rtsp_url = "rtsp://localhost:8554/mystream"
+    rtsp_url = "rtsp://192.168.1.121:8554/mystream"
     cap = cv2.VideoCapture(rtsp_url)
 
     # Check if the stream is opened successfully
