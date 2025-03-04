@@ -3,6 +3,35 @@ import sqlite3
 import face_recognition
 import uuid
 
+# Define the default database path
+DB_PATH = 'database/db.sqlite3'
+
+
+def init_db(db_path=DB_PATH):
+    """
+    Initializes the database by ensuring the directory exists and
+    creating the 'persons' table if it does not already exist.
+    """
+    # Create database directory if it doesn't exist
+    db_dir = os.path.dirname(db_path)
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+
+    # Connect to the database and create the table
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS persons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        person_id TEXT NOT NULL,
+        face_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        status TEXT NOT NULL
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
 
 def extract_face_encoding(image_path):
     """
@@ -19,7 +48,7 @@ def extract_face_encoding(image_path):
     return face_encodings[0].tobytes().hex()
 
 
-def add_person_to_db(image_files, name, status, person_id=None, db_path='database/db.sqlite3'):
+def add_person_to_db(image_files, name, status, person_id=None, db_path=DB_PATH):
     """
     Adds a person's face encoding(s), name, and status to the database.
     :param image_files: A list of file-like objects (e.g., uploaded files from Flask).
@@ -32,55 +61,34 @@ def add_person_to_db(image_files, name, status, person_id=None, db_path='databas
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Ensure the 'persons' table exists
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS persons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        person_id TEXT NOT NULL,
-        face_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        status TEXT NOT NULL
-    )
-    ''')
+    # Generate a new person_id if not provided
+    if person_id is None:
+        person_id = str(uuid.uuid4())
 
-    try:
-        # Generate a new person_id if not provided
-        if person_id is None:
-            person_id = str(uuid.uuid4())
+    # Process each uploaded file
+    for image_file in image_files:
+        try:
+            # Save the uploaded file temporarily
+            temp_image_path = f"temp_{uuid.uuid4()}.jpg"
+            with open(temp_image_path, "wb") as f:
+                f.write(image_file.read())
 
-        # Process each uploaded file
-        for image_file in image_files:
-            try:
-                # Save the uploaded file temporarily
-                temp_image_path = f"temp_{uuid.uuid4()}.jpg"
-                with open(temp_image_path, "wb") as f:
-                    f.write(image_file.read())
+            # Extract face encoding
+            face_id = extract_face_encoding(temp_image_path)
 
-                # Extract face encoding
-                face_id = extract_face_encoding(temp_image_path)
+            # Insert the person's data into the database
+            cursor.execute('INSERT INTO persons (person_id, face_id, name, status) VALUES (?, ?, ?, ?)',
+                           (person_id, face_id, name, status))
+            print(f"Added encoding for {image_file.filename} to the database with person_id: {person_id}.")
 
-                # Insert the person's data into the database
-                cursor.execute('INSERT INTO persons (person_id, face_id, name, status) VALUES (?, ?, ?, ?)',
-                               (person_id, face_id, name, status))
-                print(f"Added encoding for {image_file.filename} to the database with person_id: {person_id}.")
+            # Clean up the temporary file
+            os.remove(temp_image_path)
 
-                # Clean up the temporary file
-                os.remove(temp_image_path)
+        except ValueError as e:
+            print(f"Skipping {image_file.filename}: {e}")
+        except Exception as e:
+            print(f"Error processing {image_file.filename}: {e}")
 
-            except ValueError as e:
-                print(f"Skipping {image_file.filename}: {e}")
-            except Exception as e:
-                print(f"Error processing {image_file.filename}: {e}")
-
-        # Return the person_id so it can be reused for additional images
-        return person_id
-
-    except Exception as e:
-        print(f"Error: {e}")
-
-    finally:
-        # Commit changes and close the connection
-        conn.commit()
-        conn.close()
-
-
+    conn.commit()
+    conn.close()
+    return person_id
