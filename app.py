@@ -10,7 +10,7 @@ from flask_cors import CORS
 from face_detection_utils.utils import compare_face_encodings
 from database.create_database import add_person_to_db, init_db
 from face_detection_utils.detect_faces import detect_face
-
+from utils.constants import RSTP_URL
 app = Flask(__name__)
 CORS(app)
 # Initialize the database synchronously at startup
@@ -117,7 +117,7 @@ def process_video_stream():
     global face_data
 
     # Open the RTSP stream
-    rtsp_url = "rtsp://192.168.1.121:8554/mystream"
+    rtsp_url = RSTP_URL
     cap = cv2.VideoCapture(rtsp_url)
 
     # Check if the stream is opened successfully
