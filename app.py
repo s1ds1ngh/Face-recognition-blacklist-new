@@ -6,12 +6,13 @@ import face_recognition
 import threading
 import time
 import sqlite3
+from flask_cors import CORS
 from face_detection_utils.utils import compare_face_encodings
 from database.create_database import add_person_to_db, init_db
 from face_detection_utils.detect_faces import detect_face
 
 app = Flask(__name__)
-
+CORS(app)
 # Initialize the database synchronously at startup
 init_db()
 

@@ -143,3 +143,4 @@ Footer
 ./logs
 main.py
 test_request.py
+claude_streamlit_app.py
