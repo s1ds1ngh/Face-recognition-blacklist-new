@@ -145,3 +145,4 @@ main.py
 test_request.py
 claude_streamlit_app.py
 copilot_streamlit.py
+temp*
