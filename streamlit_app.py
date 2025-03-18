@@ -275,22 +275,27 @@ def convert_uploaded_files(uploaded_files):
     """
     converted_files = []
     for uploaded_file in uploaded_files:
-        # Create a file-like object that mimics the original file interface
+        # Read the file content once
         file_bytes = uploaded_file.read()
 
         # Reset file pointer for future reads
         uploaded_file.seek(0)
 
-        file_like = type('FileWrapper', (), {
-            'read': lambda: file_bytes,
-            'name': uploaded_file.name,
-            'filename': uploaded_file.name  # Add filename attribute
-        })()
+        # Create a properly defined file-like object
+        class FileWrapper:
+            def __init__(self, content, name):
+                self.content = content
+                self.name = name
+                self.filename = name
 
+            def read(self, *args, **kwargs):
+                return self.content
+
+        # Create an instance of the wrapper
+        file_like = FileWrapper(file_bytes, uploaded_file.name)
         converted_files.append(file_like)
 
     return converted_files
-
 
 def main():
     # Declare global variables used within the function

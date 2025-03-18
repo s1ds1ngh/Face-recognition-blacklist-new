@@ -39,10 +39,18 @@ def extract_face_encoding(image_path):
     Returns the encoding as a hexadecimal string.
     """
     image = face_recognition.load_image_file(image_path)
-    face_encodings = face_recognition.face_encodings(image)
+
+    # First detect face locations
+    face_locations = face_recognition.face_locations(image)
+
+    if len(face_locations) == 0:
+        raise ValueError(f"No face detected in {image_path}")
+
+    # Then get encodings using the locations
+    face_encodings = face_recognition.face_encodings(image, face_locations)
 
     if len(face_encodings) == 0:
-        raise ValueError(f"No face detected in {image_path}")
+        raise ValueError(f"Failed to encode face in {image_path}")
 
     # Convert the encoding to a hexadecimal string for storage
     return face_encodings[0].tobytes().hex()
@@ -87,7 +95,10 @@ def add_person_to_db(image_files, name, status, person_id=None, db_path=DB_PATH)
         except ValueError as e:
             print(f"Skipping {image_file.filename}: {e}")
         except Exception as e:
-            print(f"Error processing {image_file.filename}: {e}")
+            import traceback
+            print(f"Error processing {getattr(image_file, 'filename', 'unknown')}: {e}")
+            print(traceback.format_exc())  # Print the full traceback for debugging
+
 
     conn.commit()
     conn.close()
