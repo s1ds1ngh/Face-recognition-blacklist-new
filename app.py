@@ -11,8 +11,10 @@ from face_detection_utils.utils import compare_face_encodings
 from database.create_database import add_person_to_db, init_db
 from face_detection_utils.detect_faces import detect_face
 from utils.constants import RSTP_URL
+
 app = Flask(__name__)
 CORS(app)
+
 # Initialize the database synchronously at startup
 init_db()
 
@@ -20,7 +22,6 @@ init_db()
 face_data_lock = threading.Lock()
 face_data = {}
 last_db_update_time = 0
-
 
 def load_face_ids_from_db_direct():
     """
@@ -53,7 +54,6 @@ def load_face_ids_from_db_direct():
         print(f"Error loading face data: {e}")
         return {}
 
-
 def check_and_reload_face_data():
     """
     Checks if the database has been updated and reloads face data if necessary.
@@ -76,7 +76,6 @@ def check_and_reload_face_data():
         print(f"Error checking database update time: {e}")
 
     return False
-
 
 def compare_faces_directly(face_encoding, face_data_dict):
     """
@@ -107,7 +106,6 @@ def compare_faces_directly(face_encoding, face_data_dict):
         return None, None
 
     return best_match
-
 
 def process_video_stream():
     """
@@ -196,23 +194,15 @@ def process_video_stream():
     cap.release()
     cv2.destroyAllWindows()
 
-
 @app.route('/upload_images', methods=['POST'])
 def upload_images():
     name = request.form.get('name')
     status = request.form.get('status')
 
-    # Debugging prints
-    print("Form Data:", request.form)
-    print("Files Data:", request.files)
-
     if not name or not status:
         return jsonify({"error": "Missing 'name' or 'status' in request"}), 400
 
     image_files = request.files.getlist('images')
-
-    # Debugging prints
-    print("Extracted Files:", image_files)
 
     if not image_files or image_files[0].filename == '':
         return jsonify({"error": "No images provided"}), 400
@@ -224,7 +214,6 @@ def upload_images():
         with face_data_lock:
             global face_data
             face_data = load_face_ids_from_db_direct()
-            print(f"Face data reloaded after adding {name}. Total entries: {len(face_data)}")
 
         return jsonify({
             "message": f"Successfully added {len(image_files)} image(s) for {name} with person_id: {person_id}"
@@ -232,7 +221,6 @@ def upload_images():
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
 
 @app.route('/reload', methods=['GET'])
 def reload_face_data_endpoint():
@@ -249,7 +237,6 @@ def reload_face_data_endpoint():
         }), 200
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -302,7 +289,6 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
 
 if __name__ == "__main__":
     # Initial load of face data
