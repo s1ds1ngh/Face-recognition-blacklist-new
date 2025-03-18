@@ -246,7 +246,7 @@ def main():
     # RTSP Stream URL configuration
     rtsp_url = st.sidebar.text_input(
         "RTSP Stream URL",
-        value="rtsp://192.168.0.139:8554/mystream"
+        value="rtsp://192.168.1.121:8554/mystream"
     )
 
     # Initialize video stream handler
